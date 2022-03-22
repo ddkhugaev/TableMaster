@@ -16,7 +16,6 @@ def not_found(error):
 
 
 @app.route('/')
-@app.route('/index')
 def index():
     return "Table Master"
 
