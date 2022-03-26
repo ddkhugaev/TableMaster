@@ -1,9 +1,13 @@
 import os
 
-from flask import Flask
-from flask import render_template
+from flask import Flask, render_template
 from data import db_session
-from data.models import *
+from data.user import User
+from data.charge import Charge
+from data.fac import Fac
+from data.group import Group
+from data.audit import Audit
+from data.lesson import Lesson
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -17,11 +21,11 @@ def not_found(error):
 
 @app.route('/')
 def index():
-    return "Table Master"
+    return render_template('base.html')
 
 
 def main():
-    db_session.global_init("db/mars.db")
+    db_session.global_init("db/table.db")
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
 
