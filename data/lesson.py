@@ -8,4 +8,5 @@ class Lesson(SqlAlchemyBase):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     charge_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('charge.id'))
     audit_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('audit.id'))
+    group_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('group.id'))
     couple_number = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
