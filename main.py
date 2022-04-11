@@ -86,6 +86,14 @@ def index():
     return render_template('base.html')
 
 
+@app.route('/invite', methods=['GET', 'POST'])
+def invite():
+    form = InviteForm()
+    if form.validate_on_submit():
+        return redirect('/')
+    return render_template('add_user.html', title='Приглашение пользователя', form=form)
+
+
 def main():
     db_session.global_init("db/table.db")
 
