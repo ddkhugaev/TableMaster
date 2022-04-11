@@ -10,6 +10,8 @@ from data.fac import Fac
 from data.group import Group
 from data.audit import Audit
 from data.lesson import Lesson
+from data.teacher import Teacher
+from data.subject import Subject
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'

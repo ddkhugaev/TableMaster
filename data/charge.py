@@ -6,11 +6,9 @@ class Charge(SqlAlchemyBase):
     __tablename__ = 'charge'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
-    user_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('user.id'))
+    teacher_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('teacher.id'))
     group_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('group.id'))
-    subject = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    subject_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('subject.id'))
     type = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    hours = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-    requirements = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    preferences = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    pairs = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     semester = sqlalchemy.Column(sqlalchemy.String, nullable=True)
