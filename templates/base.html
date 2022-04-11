@@ -25,10 +25,13 @@
 				<ul class="navbar-nav mr-auto">
 					<!---->
 					{% if current_user.is_authenticated %}
-                    	<a class="nav-link" href="/logout">{{ current_user.name }}</a>
+                    	<a style="margin-right: 5%;" class="nav-link" href="/logout">{{ current_user.name }}</a>
+						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/кде">Расписания</a>
+						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/кде">Учителя</a>
+						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/кде">Кабинеты</a>
             		{% else %}
-                    	<a class="btn btn-primary" href="/register">Зарегистрироваться</a>
-                    	<a class="btn btn-outline-primary" href="/login">Войти</a>
+                    	<a style="margin-right: 5%;" class="btn btn-primary" href="/register">Зарегистрироваться</a>
+                    	<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/login">Войти</a>
             		{% endif %}
 				</ul>
 			</div>
