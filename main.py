@@ -10,7 +10,6 @@ from data.fac import Fac
 from data.group import Group
 from data.audit import Audit
 from data.lesson import Lesson
-from data.invite import Invite
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -42,18 +41,15 @@ def register():
         if base.query(User).filter(User.email == form.email.data).first():
             return render_template('register.html', title='Регистрация',
                                    form=form, msg='Почта уже занята')
-        invite = base.query(Invite).filter(Invite.code == form.invite.data).first()
-        if not invite:
+        if base.query(User).filter(User.name == form.name.data).first():
             return render_template('register.html', title='Регистрация',
-                                   form=form, msg='Код недействителен')
+                                   form=form, msg='Имя уже используется')
         user = User(
-            full_name=invite.full_name,
-            email=form.email.data,
-            role=invite.role
+            name=form.name.data,
+            email=form.email.data
         )
         user.set_password(form.password.data)
         base.add(user)
-        base.delete(invite)
         base.commit()
         login_user(user)
         return redirect('/')
@@ -67,6 +63,8 @@ def login():
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.email == form.email.data).first()
+        if not user:
+            user = db_sess.query(User).filter(User.name == form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
@@ -86,24 +84,18 @@ def index():
     return render_template('base.html')
 
 
-@app.route('/invite', methods=['GET', 'POST'])
-def invite():
-    form = InviteForm()
-    if form.validate_on_submit():
-        return redirect('/')
-    return render_template('add_user.html', title='Приглашение пользователя', form=form)
-
-
 def main():
     db_session.global_init("db/table.db")
 
-    # base = db_session.create_session()
-    # invite = Invite(
-    #     full_name='test001',
-    #     role=1,
-    #     code=12345
+    # base = db_session.create_session()    # asdasdasd
+    #
+    # user = User(
+    #     name='a',
+    #     email='a@a.a'
     # )
-    # base.add(invite)
+    # user.set_password('1')
+    # base.add(user)
+    #
     # base.commit()
 
     port = int(os.environ.get("PORT", 5000))
