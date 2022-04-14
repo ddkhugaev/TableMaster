@@ -25,11 +25,9 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect("/")
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('404.html')
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -76,14 +74,32 @@ def login():
     return render_template('login.html', title='Авторизация', form=form)
 
 
-@app.errorhandler(404)
-def not_found(error):
-    return render_template('404.html')
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
 
 
 @app.route('/')
 def index():
     return render_template('base.html')
+
+
+@app.route('/teacher', methods=['GET', 'POST'])
+def teacher():
+    form = TeacherForm()
+    if form.validate_on_submit():
+        base = db_session.create_session()
+        teacher = Teacher(
+            surname=form.surname.data,
+            name=form.name.data,
+            patronymic=form.patronymic.data
+        )
+        base.add(teacher)
+        base.commit()
+        return redirect('/')
+    return render_template('teacher.html', title='Добавление учителя', form=form)
 
 
 def main():

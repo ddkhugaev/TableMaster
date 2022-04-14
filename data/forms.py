@@ -20,4 +20,7 @@ class LoginForm(FlaskForm):
 
 
 class TeacherForm(FlaskForm):
-    pass
+    surname = StringField('Фамилия', validators=[DataRequired()])
+    name = StringField('Имя', validators=[DataRequired()])
+    patronymic = StringField('Отчество', validators=[DataRequired()])
+    submit = SubmitField('Добавить')
