@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import EmailField, PasswordField, StringField, SubmitField, \
-    BooleanField
+    BooleanField, IntegerField
 from wtforms.validators import DataRequired
 
 
@@ -23,4 +23,10 @@ class TeacherForm(FlaskForm):
     surname = StringField('Фамилия', validators=[DataRequired()])
     name = StringField('Имя', validators=[DataRequired()])
     patronymic = StringField('Отчество', validators=[DataRequired()])
+    submit = SubmitField('Добавить')
+
+
+class AuditForm(FlaskForm):
+    number = IntegerField('Номер', validators=[DataRequired()])
+    volume = IntegerField('Вместимость', validators=[DataRequired()])
     submit = SubmitField('Добавить')

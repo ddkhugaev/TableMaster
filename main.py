@@ -102,6 +102,21 @@ def teacher():
     return render_template('teacher.html', title='Добавление учителя', form=form)
 
 
+@app.route('/audit', methods=['GET', 'POST'])
+def audit():
+    form = AuditForm()
+    if form.validate_on_submit():
+        base = db_session.create_session()
+        audit = Audit(
+            number=form.number.data,
+            volume=form.volume.data
+        )
+        base.add(audit)
+        base.commit()
+        return redirect('/')
+    return render_template('audit.html', title='Добавление учителя', form=form)
+
+
 def main():
     db_session.global_init("db/table.db")
 
