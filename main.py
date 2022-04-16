@@ -13,6 +13,9 @@ from data.lesson import Lesson
 from data.teacher import Teacher
 from data.subject import Subject
 
+
+WEEK = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 lm = LoginManager()
@@ -102,6 +105,71 @@ def teacher():
     return render_template('teacher.html', title='Добавление учителя', form=form)
 
 
+@app.route('/group', methods=['GET', 'POST'])
+def group():
+    form = GroupForm()
+    if form.validate_on_submit():
+        base = db_session.create_session()
+        group = Group(
+            name=form.name.data,
+            level=form.level.data
+        )
+        base.add(group)
+        base.commit()
+        return redirect('/')
+    return render_template('group.html', title='Добавление группы', form=form)
+
+
+@app.route('/charge', methods=['GET', 'POST'])
+def charge():
+    base = db_session.create_session()
+    form = ChargeForm()
+    form.teacher_fio.choices = list(map(lambda x: ' '.join(x),
+                                        base.query(
+        Teacher.surname,
+        Teacher.name,
+        Teacher.patronymic
+    ).all()))
+    form.group_name.choices = list(map(lambda x: x[0],
+                               base.query(Group.name).all()))
+    form.subject_name.choices = list(map(lambda x: x[0],
+                                 base.query(Subject.title).all()))
+
+    if form.validate_on_submit():
+        f_i_o = form.teacher_fio.data.split()
+        charge = Charge(
+            teacher_id = base.query(Teacher.id).filter(Teacher.surname == f_i_o[0],
+                                                       Teacher.name == f_i_o[1],
+                                                       Teacher.patronymic == f_i_o[2]
+                                                       ).first()[0],
+            group_id = base.query(Group.id).filter(Group.name == form.group_name.data
+                                                   ).first()[0],
+            subject_id = base.query(Subject.id).filter(Subject.title == form.subject_name.data
+                                                       ).first()[0],
+            type=form.type.data,
+            pairs=form.pairs.data,
+            semester=form.semester.data
+        )
+        base.add(charge)
+        base.commit()
+        return redirect('/')
+    return render_template('charge.html', title='Добавление нагрузки', form=form)
+
+
+@app.route('/subject', methods=['GET', 'POST'])
+def subject():
+    form = SubjectForm()
+    if form.validate_on_submit():
+        base = db_session.create_session()
+        subject = Subject(
+            title = form.title.data
+        )
+        base.add(subject)
+        base.commit()
+        return redirect('/')
+    return render_template('subject.html', title='Добавление предмета', form=form)
+
+
 @app.route('/audit', methods=['GET', 'POST'])
 def audit():
     form = AuditForm()
@@ -115,6 +183,30 @@ def audit():
         base.commit()
         return redirect('/')
     return render_template('audit.html', title='Добавление учителя', form=form)
+
+
+@app.route('/redactor')
+def redactor():
+    # <PAIRS_IN_A_DAY> полей на каждый день / вся неделя по порядку
+    form = Redactor()
+    db = db_session.create_session()
+    chraw = db.query(Charge).all()
+    aud = ['<выбрать кабинет>'] + list(map(lambda x: x[0], db.query(Audit.number).all()))
+    print(aud)
+    ch = ['<выбрать нагрузку>']
+    for c in chraw:
+        sj = db.query(Subject.title).filter(Subject.id == c.subject_id).first()[0]
+        t = db.query(Teacher).filter(Teacher.id == c.teacher_id).first()
+        ch.append(f'{sj} ({c.type})'
+                      f' ({t.surname + " " + t.name + " " + t.patronymic})'
+                      f' | {c.id}')
+    for field in form.charges:
+        field.choices = ch
+    for field in form.audits:
+        field.choices = aud
+    print(form._fields.keys())
+    return render_template('table_redactor.html', title='Создание расписания', form=form,
+                           pad=PAIRS_IN_A_DAY, week=WEEK, group='< вставить название группы >')
 
 
 def main():

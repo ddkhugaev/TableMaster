@@ -25,10 +25,13 @@
 				<ul class="navbar-nav mr-auto">
 					<!---->
 					{% if current_user.is_authenticated %}
-                    	<a style="margin-right: 5%;" class="nav-link" href="/logout">{{ current_user.name }}</a>
-						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/кде">Расписания</a>
+						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/redactor">Расписания</a>
 						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/teacher">Учителя</a>
+						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/group">Группы</a>
+						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/charge">Нагрузки</a>
+						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/subject">Предметы</a>
 						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/audit">Аудитории</a>
+						<a style="margin-right: 5%;" class="nav-link" href="/logout">{{ current_user.name }}</a>
             		{% else %}
                     	<a style="margin-right: 5%;" class="btn btn-primary" href="/register">Зарегистрироваться</a>
                     	<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/login">Войти</a>

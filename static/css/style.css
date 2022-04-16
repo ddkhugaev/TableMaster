@@ -16,6 +16,10 @@
 	min-height: 90vh;
 }
 
+#Redactor {
+    width: 100%;
+}
+
 #Footer {
 	position: relative;
 	height: 100px;

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Редактор расписания для {{group}}</h1>
+{% for m in msg %}
+<div class="alert alert-danger" role="alert">{{ m }}</div>
+{% endfor %}
+<form method="post" class="">
+    {{ form.hidden_tag() }}
+    <table id="Redactor"  class="table table-bordered">
+        {% for i in range(3) %}
+            <tr>
+                <th colspan="3">{{ week[i] }}</th>
+                <th colspan="3">{{ week[i + 3] }}</th>
+            </tr>
+            {% for j in range(pad) %}
+            <tr>
+                <th>{{ j + 1 }}</th>
+                <td>
+                    {{ form.charges[pad * i + j](class="form-control")  }}
+                </td>
+                <td>
+                    {{ form.audits[pad * i + j](class="form-control")  }}
+                </td>
+                <th>{{ j + 1 }}</th>
+                <td>
+                    {{ form.charges[pad * (i + 3) + j](class="form-control")  }}
+                </td>
+                <td>
+                    {{ form.audits[pad * (i + 3) + j](class="form-control")  }}
+                </td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+    <!--
+    {% for field in form %}
+        {% if loop.index not in [5, 6] %}
+            <p>
+                {{ field.label }}<br>
+                {{ field(class="form-control") }}<br>
+                {% for error in field.errors %}
+                    <p class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </p>
+        {% endif %}
+    {% endfor %}
+    -->
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+</form>
+{% endblock %}
