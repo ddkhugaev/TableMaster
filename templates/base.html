@@ -31,7 +31,8 @@
 						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/charge">Нагрузки</a>
 						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/subject">Предметы</a>
 						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/audit">Аудитории</a>
-						<a style="margin-right: 5%;" class="nav-link" href="/logout">{{ current_user.name }}</a>
+						<a style="margin-right: 5%;" class="nav-link">{{ current_user.name }}</a>
+						<a style="margin-right: 5%; color: red;" class="nav-link" href="/logout">Выйти</a>
             		{% else %}
                     	<a style="margin-right: 5%;" class="btn btn-primary" href="/register">Зарегистрироваться</a>
                     	<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/login">Войти</a>
