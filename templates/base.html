@@ -6,7 +6,7 @@
 
     <!--Ссылки на Bootstrap CSS и наш CSS-->
     <link rel="stylesheet" type="text/css"
-    href="static/css/style.css" />
+    href="/static/css/style.css" />
     <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
     integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
@@ -17,27 +17,32 @@
 <body>
 	<div id="Header" class="fixed-top">
 		<nav class="navbar navbar-expand-lg navbar-light bg-light">
-			<a class="navbar-brand" href="/">TableMaster</a>
+			<a class="navbar-brand" style="margin-right: 2rem;" href="/">TableMaster</a>
 			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#phoneCollapsed" aria-controls="phoneCollapsed" aria-expanded="false" aria-label="Toggle navigation">
 			    <span class="navbar-toggler-icon"></span>
 			</button>
-			<div class="collapse navbar-collapse" id="phoneCollapsed">
-				<ul class="navbar-nav mr-auto">
-					<!---->
-					{% if current_user.is_authenticated %}
-						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/redactor">Расписания</a>
-						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/teacher">Учителя</a>
-						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/group">Группы</a>
-						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/charge">Нагрузки</a>
-						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/subject">Предметы</a>
-						<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/audit">Аудитории</a>
-						<a style="margin-right: 5%;" class="nav-link">{{ current_user.name }}</a>
-						<a style="margin-right: 5%; color: red;" class="nav-link" href="/logout">Выйти</a>
-            		{% else %}
-                    	<a style="margin-right: 5%;" class="btn btn-primary" href="/register">Зарегистрироваться</a>
-                    	<a style="margin-right: 5%;" class="btn btn-outline-primary" href="/login">Войти</a>
-            		{% endif %}
-				</ul>
+			<div class="collapse navbar-collapse justify-content-between" id="phoneCollapsed">
+				<!---->
+				{% if current_user.is_authenticated %}
+					<div style="display: flex;">
+						<a class="btn btn-outline-primary" href="/redactor">Расписания</a>
+						<a class="nav-link" href="/teacher_list">Учителя</a>
+						<a class="nav-link" href="/group_list">Группы</a>
+						<a class="nav-link" href="/charge">Нагрузки</a>
+						<a class="nav-link" href="/subject">Предметы</a>
+						<a class="nav-link" href="/audit">Аудитории</a>
+					</div>
+					<div style="display: flex;">
+						<a class="nav-link text-secondary">{{ current_user.name }}</a>
+						<a class="btn btn-danger" href="/logout">Выйти</a>
+					</div>
+				{% else %}
+					<div style="display: flex;"></div>
+					<div style="display: flex;">
+						<a class="btn btn-primary" href="/register">Зарегистрироваться</a>
+						<a class="btn btn-outline-primary" style="margin-left: 1rem;" href="/login">Войти</a>
+					</div>
+				{% endif %}
 			</div>
 		</nav>
 	</div>

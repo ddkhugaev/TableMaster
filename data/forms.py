@@ -61,3 +61,7 @@ class Redactor(FlaskForm):
     charges = FieldList(SelectField(), min_entries=PAIRS_IN_A_DAY * 6)
     audits = FieldList(SelectField(), min_entries=PAIRS_IN_A_DAY * 6)
     submit = SubmitField('Сохранить и проверить')
+
+class OKForm(FlaskForm):
+    confirm = BooleanField('Я нахожусь в добром здравии и хочу продолжить', default=True, validators=[DataRequired()])
+    submit = SubmitField('Подтвердить')

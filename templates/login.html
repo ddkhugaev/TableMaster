@@ -8,7 +8,7 @@
 <form method="post" class="">
     {{ form.hidden_tag() }}
     {% for field in form %}
-        {% if loop.index not in [4, 5] %}
+        {% if loop.index not in [3, 4, 5] %}
             <p>
                 {{ field.label }}<br>
                 {{ field(class="form-control") }}<br>
@@ -20,6 +20,7 @@
             </p>
         {% endif %}
     {% endfor %}
+    <p>{{ form.remember_me(type="checkbox", class="form-check-input") }} {{ form.remember_me.label }}</p>
     <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
 </form>
 {% endblock %}

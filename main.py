@@ -1,5 +1,6 @@
 import os
 
+import flask
 from flask import Flask, render_template, redirect
 from flask_login import LoginManager, login_user, logout_user, login_required
 from data import db_session
@@ -31,6 +32,11 @@ def load_user(user_id):
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html')
+
+
+@app.errorhandler(500)
+def not_found(error):
+    return render_template('500.html')
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -69,7 +75,7 @@ def login():
         if not user:
             user = db_sess.query(User).filter(User.name == form.email.data).first()
         if user and user.check_password(form.password.data):
-            login_user(user, remember=form.remember_me.data)
+            login_user(user, remember=False)
             return redirect("/")
         return render_template('login.html', title='Авторизация',
                                msg="Неправильный логин или пароль",
@@ -89,8 +95,34 @@ def index():
     return render_template('hello.html')
 
 
+@app.route('/teacher_list')
+def teacher_list():
+    base = db_session.create_session()
+    group = [(el.id, el.surname + ' ' + el.name + ' ' + el.patronymic) for el in base.query(Teacher).all()]
+    group.sort(key=lambda x: x[1])
+    return render_template('teacher_list.html', title='Учителя', group=group)
+
+
+@app.route('/group_list')
+def group_list():
+    base = db_session.create_session()
+    group = [(el.id, f'(Курс {el.level}) {el.name}') for el in base.query(Group).all()]
+    group.sort(key=lambda x: x[1])
+    return render_template('group_list.html', title='Группы', group=group)
+
+
+@app.route('/charge_list')
+def charge_list():
+    base = db_session.create_session()
+    group = [(el.id, f'{el.teacher_id}/{el.group_id}/{el.subject_id}({el.type}) '
+                     f'({el.semester} семестр, {el.pairs} пар)') for el in base.query(Charge).all()]
+    group.sort(key=lambda x: x[1])
+    return render_template('charge_list.html', title='Нагрузки', group=group)
+
+
 @app.route('/teacher', methods=['GET', 'POST'])
-def teacher():
+@login_required
+def add_teacher():
     form = TeacherForm()
     if form.validate_on_submit():
         base = db_session.create_session()
@@ -101,12 +133,33 @@ def teacher():
         )
         base.add(teacher)
         base.commit()
-        return redirect('/')
+        return redirect('/teacher_list')
     return render_template('teacher.html', title='Добавление учителя', form=form)
 
 
+@app.route('/teacher/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_teacher(id):
+    form = TeacherForm()
+    if flask.request.method == 'GET':
+        load = db_session.create_session().query(Teacher).get(id)
+        form.surname.data = load.surname
+        form.name.data = load.name
+        form.patronymic.data = load.patronymic
+    if form.validate_on_submit():
+        base = db_session.create_session()
+        teacher = base.query(Teacher).get(id)
+        teacher.surname = form.surname.data
+        teacher.name = form.name.data
+        teacher.patronymic = form.patronymic.data
+        base.commit()
+        return redirect('/teacher_list')
+    return render_template('teacher.html', title='Изменение учителя', form=form)
+
+
 @app.route('/group', methods=['GET', 'POST'])
-def group():
+@login_required
+def add_group():
     form = GroupForm()
     if form.validate_on_submit():
         base = db_session.create_session()
@@ -116,11 +169,30 @@ def group():
         )
         base.add(group)
         base.commit()
-        return redirect('/')
+        return redirect('/group_list')
     return render_template('group.html', title='Добавление группы', form=form)
 
 
+@app.route('/group/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_group(id):
+    form = GroupForm()
+    if flask.request.method == 'GET':
+        load = db_session.create_session().query(Group).get(id)
+        form.name.data = load.name
+        form.level.data = load.level
+    if form.validate_on_submit():
+        base = db_session.create_session()
+        group = base.query(Group).get(id)
+        group.name = form.name.data
+        group.level = form.level.data
+        base.commit()
+        return redirect('/group_list')
+    return render_template('group.html', title='Изменение группы', form=form)
+
+
 @app.route('/charge', methods=['GET', 'POST'])
+@login_required
 def charge():
     base = db_session.create_session()
     form = ChargeForm()
@@ -157,6 +229,7 @@ def charge():
 
 
 @app.route('/subject', methods=['GET', 'POST'])
+@login_required
 def subject():
     form = SubjectForm()
     if form.validate_on_submit():
@@ -171,6 +244,7 @@ def subject():
 
 
 @app.route('/audit', methods=['GET', 'POST'])
+@login_required
 def audit():
     form = AuditForm()
     if form.validate_on_submit():
@@ -186,6 +260,7 @@ def audit():
 
 
 @app.route('/redactor')
+@login_required
 def redactor():
     # <PAIRS_IN_A_DAY> полей на каждый день / вся неделя по порядку
     form = Redactor()
@@ -207,6 +282,25 @@ def redactor():
     print(form._fields.keys())
     return render_template('table_redactor.html', title='Создание расписания', form=form,
                            pad=PAIRS_IN_A_DAY, week=WEEK, group='< вставить название группы >')
+
+
+@app.route('/delete/<subject>/<int:id>', methods=['GET', 'POST'])
+@login_required
+def delete(subject, id):
+    form = OKForm()
+    base = db_session.create_session()
+    if subject == 'teacher':
+        object = base.query(Teacher).get(id)
+        name = '(Учитель) ' + object.surname + ' ' + object.name + ' ' + object.patronymic
+    elif subject == 'group':
+        object = base.query(Group).get(id)
+        name = '(Группа) ' + f'(Курс {object.level}) {object.name}'
+
+    if form.validate_on_submit():
+        base.delete(object)
+        base.commit()
+        return redirect(f'/{subject}_list')
+    return render_template('are_you_sure.html', title='Потверждение удаления', name=name, form=form)
 
 
 def main():

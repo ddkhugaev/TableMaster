@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <p>
+        <a href="/teacher" class="btn btn-primary">Добавить</a>
+    </p>
+    {% for el in group %}
+    <div class="minicard">
+        <span>{{ loop.index }}</span>
+        <div>
+            <a class="btn btn-outline-danger btn-sm" style="margin: 0 .5rem;" href="delete/teacher/{{ el[0] }}">Удалить</a>
+        </div>
+        <a href="/teacher/{{ el[0] }}">{{ el[1] }}</a>
+    </div>
+    {% endfor %}
+    <h3>Всего: {{ group|length }}</h3>
+{% endblock %}

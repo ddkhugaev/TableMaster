@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Подтверждение удаления</h1>
+<h3 class="text-danger">Внимание!</h3>
+<p>Вы собираетесь удалить: {{ name }}</p>
+<p>
+    Действие нельзя отменить, поэтому мы решили удостовериться, что вы не нажали на кнопку случайно.
+    Если вы хотите удалить элемент из базы данных, нажмите "Подтвердить".
+</p>
+<form method="post" class="">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.confirm(type="checkbox", class="form-check-input") }}
+        {{ form.confirm.label }}
+    </p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+</form>
+{% endblock %}
