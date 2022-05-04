@@ -17,6 +17,7 @@ from data.subject import Subject
 
 WEEK = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
 
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 lm = LoginManager()
@@ -31,12 +32,12 @@ def load_user(user_id):
 
 @app.errorhandler(404)
 def not_found(error):
-    return render_template('404.html')
+    return render_template('404.html', title='Страница не найдена')
 
 
 @app.errorhandler(500)
-def not_found(error):
-    return render_template('500.html')
+def internal_server_error(error):
+    return render_template('500.html', title='Внутренняя ошибка сервера')
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -114,10 +115,32 @@ def group_list():
 @app.route('/charge_list')
 def charge_list():
     base = db_session.create_session()
-    group = [(el.id, f'{el.teacher_id}/{el.group_id}/{el.subject_id}({el.type}) '
-                     f'({el.semester} семестр, {el.pairs} пар)') for el in base.query(Charge).all()]
+    group = []
+    for el in base.query(Charge).all():
+        te = base.query(Teacher).get(el.teacher_id)
+        gr = base.query(Group).get(el.group_id)
+        su = base.query(Subject).get(el.subject_id)
+        group.append((el.id, f'{te.surname} {te.name} {te.patronymic}'
+                             f'/{gr.name}/{su.title}({el.type}) '
+                             f'({el.semester} семестр, {el.pairs} пар)'))
     group.sort(key=lambda x: x[1])
     return render_template('charge_list.html', title='Нагрузки', group=group)
+
+
+@app.route('/subject_list')
+def subject_list():
+    base = db_session.create_session()
+    group = [(el.id, el.title) for el in base.query(Subject).all()]
+    group.sort(key=lambda x: x[1])
+    return render_template('subject_list.html', title='Предметы', group=group)
+
+
+@app.route('/audit_list')
+def audit_list():
+    base = db_session.create_session()
+    group = [(el.id, f'Кабинет №{el.number} ({el.volume} чел.)') for el in base.query(Audit).all()]
+    group.sort(key=lambda x: x[1])
+    return render_template('audit_list.html', title='Аудитории', group=group)
 
 
 @app.route('/teacher', methods=['GET', 'POST'])
@@ -141,13 +164,13 @@ def add_teacher():
 @login_required
 def edit_teacher(id):
     form = TeacherForm()
+    base = db_session.create_session()
     if flask.request.method == 'GET':
-        load = db_session.create_session().query(Teacher).get(id)
+        load = base.query(Teacher).get(id)
         form.surname.data = load.surname
         form.name.data = load.name
         form.patronymic.data = load.patronymic
     if form.validate_on_submit():
-        base = db_session.create_session()
         teacher = base.query(Teacher).get(id)
         teacher.surname = form.surname.data
         teacher.name = form.name.data
@@ -177,12 +200,12 @@ def add_group():
 @login_required
 def edit_group(id):
     form = GroupForm()
+    base = db_session.create_session()
     if flask.request.method == 'GET':
-        load = db_session.create_session().query(Group).get(id)
+        load = base.query(Group).get(id)
         form.name.data = load.name
         form.level.data = load.level
     if form.validate_on_submit():
-        base = db_session.create_session()
         group = base.query(Group).get(id)
         group.name = form.name.data
         group.level = form.level.data
@@ -193,7 +216,7 @@ def edit_group(id):
 
 @app.route('/charge', methods=['GET', 'POST'])
 @login_required
-def charge():
+def add_charge():
     base = db_session.create_session()
     form = ChargeForm()
     form.teacher_fio.choices = list(map(lambda x: ' '.join(x),
@@ -224,13 +247,56 @@ def charge():
         )
         base.add(charge)
         base.commit()
-        return redirect('/')
+        return redirect('/charge_list')
     return render_template('charge.html', title='Добавление нагрузки', form=form)
+
+
+@app.route('/charge/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_charge(id):
+    base = db_session.create_session()
+    form = ChargeForm()
+    form.teacher_fio.choices = list(map(lambda x: ' '.join(x),
+                                        base.query(
+        Teacher.surname,
+        Teacher.name,
+        Teacher.patronymic
+    ).all()))
+    form.group_name.choices = list(map(lambda x: x[0],
+                                       base.query(Group.name).all()))
+    form.subject_name.choices = list(map(lambda x: x[0],
+                                         base.query(Subject.title).all()))
+    if flask.request.method == 'GET':
+        load = base.query(Charge).get(id)
+        te = base.query(Teacher).get(load.teacher_id)
+        gr = base.query(Group).get(load.group_id)
+        su = base.query(Subject).get(load.subject_id)
+        form.teacher_fio.choices.insert(0, f'{te.surname} {te.name} {te.patronymic}')
+        form.group_name.choices.insert(0, gr.name)
+        form.subject_name.choices.insert(0, su.title)
+        form.type.data = load.type
+        form.pairs.data = load.pairs
+        form.semester.data = load.semester
+    if form.validate_on_submit():
+        f_i_o = form.teacher_fio.data.split()
+        charge = base.query(Charge).get(id)
+        charge.teacher_id = base.query(Teacher.id).filter(Teacher.surname == f_i_o[0],
+                                                          Teacher.name == f_i_o[1],
+                                                          Teacher.patronymic == f_i_o[2]
+                                                         ).first()[0]
+        charge.group_id = base.query(Group.id).filter(Group.name == form.group_name.data).first()[0]
+        charge.subject_id = base.query(Subject.id).filter(Subject.title == form.subject_name.data).first()[0]
+        charge.type = form.type.data
+        charge.pairs = form.pairs.data
+        charge.semester = form.semester.data
+        base.commit()
+        return redirect('/charge_list')
+    return render_template('charge.html', title='Изменение нагрузки', form=form)
 
 
 @app.route('/subject', methods=['GET', 'POST'])
 @login_required
-def subject():
+def add_subject():
     form = SubjectForm()
     if form.validate_on_submit():
         base = db_session.create_session()
@@ -239,13 +305,29 @@ def subject():
         )
         base.add(subject)
         base.commit()
-        return redirect('/')
+        return redirect('/subject_list')
     return render_template('subject.html', title='Добавление предмета', form=form)
+
+
+@app.route('/subject/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_subject(id):
+    form = SubjectForm()
+    base = db_session.create_session()
+    if flask.request.method == 'GET':
+        load = base.query(Subject).get(id)
+        form.title.data = load.title
+    if form.validate_on_submit():
+        subject = base.query(Subject).get(id)
+        subject.title = form.title.data
+        base.commit()
+        return redirect('/subject_list')
+    return render_template('subject.html', title='Изменение предмета', form=form)
 
 
 @app.route('/audit', methods=['GET', 'POST'])
 @login_required
-def audit():
+def add_audit():
     form = AuditForm()
     if form.validate_on_submit():
         base = db_session.create_session()
@@ -255,8 +337,26 @@ def audit():
         )
         base.add(audit)
         base.commit()
-        return redirect('/')
-    return render_template('audit.html', title='Добавление учителя', form=form)
+        return redirect('/audit_list')
+    return render_template('audit.html', title='Добавление аудитории', form=form)
+
+
+@app.route('/audit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_audit(id):
+    form = AuditForm()
+    base = db_session.create_session()
+    if flask.request.method == 'GET':
+        load = base.query(Audit).get(id)
+        form.number.data = load.number
+        form.volume.data = load.volume
+    if form.validate_on_submit():
+        audit = base.query(Audit).get(id)
+        audit.number = form.number.data
+        audit.volume = form.volume.data
+        base.commit()
+        return redirect('/audit_list')
+    return render_template('audit.html', title='Изменение аудитории', form=form)
 
 
 @app.route('/redactor')
@@ -290,16 +390,39 @@ def delete(subject, id):
     form = OKForm()
     base = db_session.create_session()
     if subject == 'teacher':
-        object = base.query(Teacher).get(id)
-        name = '(Учитель) ' + object.surname + ' ' + object.name + ' ' + object.patronymic
+        obj = base.query(Teacher).get(id)
+        name = '(Учитель) ' + obj.surname + ' ' + obj.name + ' ' + obj.patronymic
+        conflicts = [base.query(Charge).filter(Charge.teacher_id == id).all()]
     elif subject == 'group':
-        object = base.query(Group).get(id)
-        name = '(Группа) ' + f'(Курс {object.level}) {object.name}'
+        obj = base.query(Group).get(id)
+        name = '(Группа) ' + f'(Курс {obj.level}) {obj.name}'
+        conflicts = [base.query(Charge).filter(Charge.group_id == id).all()]
+    elif subject == 'charge':
+        obj = base.query(Group).get(id)
+        te = base.query(Teacher).get(obj.teacher_id)
+        gr = base.query(Group).get(obj.group_id)
+        su = base.query(Subject).get(obj.subject_id)
+        name = f'(Нагрузка) {te.surname} {te.name} {te.patronymic}'
+        f'/{gr.name}/{su.title}({obj.type}) '
+        f'({obj.semester} семестр, {obj.pairs} пар)'
+        conflicts = [base.query(Lesson).filter(Lesson.charge_id == id).all()]
+    elif subject == 'subject':
+        obj = base.query(Subject).get(id)
+        name = '(Предмет) ' + obj.title
+        conflicts = [base.query(Charge).filter(Charge.subject_id == id).all()]
+    elif subject == 'audit':
+        obj = base.query(Audit).get(id)
+        name = 'Кабинет №' + str(obj.number) + f'({obj.volume} чел.)'
+        conflicts = [base.query(Lesson).filter(Lesson.audit_id == id).all()]
 
     if form.validate_on_submit():
-        base.delete(object)
+        base.delete(obj)
         base.commit()
         return redirect(f'/{subject}_list')
+    
+    if any(conflicts):
+        return render_template('9403.html', name=name, bacc=f'/{subject}_list', title='Удаление')
+        
     return render_template('are_you_sure.html', title='Потверждение удаления', name=name, form=form)
 
 

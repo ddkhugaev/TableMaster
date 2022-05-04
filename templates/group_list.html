@@ -11,7 +11,7 @@
         <div>
             <a class="btn btn-outline-danger btn-sm" style="margin: 0 .5rem;" href="delete/group/{{ el[0] }}">Удалить</a>
         </div>
-        <a href="/group/{{ el[0] }}">{{ el[1] }}</a>
+        <a href="/group/{{ el[0] }}" style="text-decoration: none">{{ el[1] }}</a>
     </div>
     {% endfor %}
     <h3>Всего: {{ group|length }}</h3>
