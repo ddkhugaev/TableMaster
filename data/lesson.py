@@ -8,4 +8,5 @@ class Lesson(SqlAlchemyBase):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     charge_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('charge.id'))
     audit_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('audit.id'))
-    couple_number = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    pair_number = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    weekday = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)

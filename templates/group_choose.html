@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <p>Выберите группу, для которой требуется расписание:</p>
+    {% for el in group %}
+    <div class="minicard">
+        <span>{{ loop.index }}</span>
+        <a href="/redactor/{{ el[0] }}" style="text-decoration: none">{{ el[1] }}</a>
+    </div>
+    {% endfor %}
+    <h3>Всего: {{ group|length }}</h3>
+{% endblock %}

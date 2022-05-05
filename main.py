@@ -7,7 +7,6 @@ from data import db_session
 from data.forms import *
 from data.user import User
 from data.charge import Charge
-from data.fac import Fac
 from data.group import Group
 from data.audit import Audit
 from data.lesson import Lesson
@@ -94,6 +93,27 @@ def logout():
 @app.route('/')
 def index():
     return render_template('hello.html')
+
+
+@app.route('/timetable_list')
+def timetable_list():
+    base = db_session.create_session()
+    groupids = set()
+    for lesson in base.query(Lesson).all():
+        ch = base.query(Charge).get(lesson.charge_id)
+        groupids.add(ch.group_id)
+    group = []
+    for g in groupids:
+        group.append((g, base.query(Group).get(g).name + ' (расписание)'))
+    return render_template('timetable_list.html', title='Расписания', group=group)
+
+
+@app.route('/group_choose')
+def group_choose():
+    base = db_session.create_session()
+    group = [(el.id, f'(Курс {el.level}) {el.name}') for el in base.query(Group).all()]
+    group.sort(key=lambda x: x[1])
+    return render_template('group_choose.html', title='Выбор группы', group=group)
 
 
 @app.route('/teacher_list')
@@ -271,9 +291,9 @@ def edit_charge(id):
         te = base.query(Teacher).get(load.teacher_id)
         gr = base.query(Group).get(load.group_id)
         su = base.query(Subject).get(load.subject_id)
-        form.teacher_fio.choices.insert(0, f'{te.surname} {te.name} {te.patronymic}')
-        form.group_name.choices.insert(0, gr.name)
-        form.subject_name.choices.insert(0, su.title)
+        form.teacher_fio.data = f'{te.surname} {te.name} {te.patronymic}'
+        form.group_name.data = gr.name
+        form.subject_name.data = su.title
         form.type.data = load.type
         form.pairs.data = load.pairs
         form.semester.data = load.semester
@@ -359,19 +379,20 @@ def edit_audit(id):
     return render_template('audit.html', title='Изменение аудитории', form=form)
 
 
-@app.route('/redactor')
+@app.route('/redactor/<int:group_id>', methods=['GET', 'POST'])
 @login_required
-def redactor():
+def redactor(group_id):
     # <PAIRS_IN_A_DAY> полей на каждый день / вся неделя по порядку
     form = Redactor()
-    db = db_session.create_session()
-    chraw = db.query(Charge).all()
-    aud = ['<выбрать кабинет>'] + list(map(lambda x: x[0], db.query(Audit.number).all()))
-    print(aud)
+    base = db_session.create_session()
+    chraw = base.query(Charge).filter(Charge.group_id == group_id)
+    involved = [el.id for el in chraw]
+
+    aud = ['<выбрать аудиторию>'] + list(map(lambda x: x[0], base.query(Audit.number).all()))
     ch = ['<выбрать нагрузку>']
     for c in chraw:
-        sj = db.query(Subject.title).filter(Subject.id == c.subject_id).first()[0]
-        t = db.query(Teacher).filter(Teacher.id == c.teacher_id).first()
+        sj = base.query(Subject.title).filter(Subject.id == c.subject_id).first()[0]
+        t = base.query(Teacher).filter(Teacher.id == c.teacher_id).first()
         ch.append(f'{sj} ({c.type})'
                       f' ({t.surname + " " + t.name + " " + t.patronymic})'
                       f' | {c.id}')
@@ -379,9 +400,40 @@ def redactor():
         field.choices = ch
     for field in form.audits:
         field.choices = aud
-    print(form._fields.keys())
+
+    if flask.request.method == 'GET':
+        for lesson in base.query(Lesson).filter(Lesson.charge_id.in_(involved)).all():
+            form.charges[lesson.weekday * PAIRS_IN_A_DAY + lesson.pair_number].data = \
+                [c for c in ch if c.split(' | ')[-1] == str(lesson.charge_id)][0]
+            form.audits[lesson.weekday * PAIRS_IN_A_DAY + lesson.pair_number].data = \
+                str(base.query(Audit).filter(Audit.id == lesson.audit_id).first().number)
+
+    if form.validate_on_submit():
+        for i in range(PAIRS_IN_A_DAY * 6):
+            clear = form.charges[i].data == '<выбрать нагрузку>' or form.audits[i].data == '<выбрать аудиторию>'
+            lesson = base.query(Lesson).filter(Lesson.charge_id.in_(involved),
+                                               Lesson.weekday == i // PAIRS_IN_A_DAY,
+                                               Lesson.pair_number == i % PAIRS_IN_A_DAY).first()
+            if lesson:
+                if clear:
+                    base.delete(lesson)
+                    continue
+                lesson.charge_id = int(form.charges[i].data.split(' | ')[-1])
+                lesson.audit_id = base.query(Audit).filter(Audit.number == form.audits[i].data).first().id
+            else:
+                if clear:
+                    continue
+                lesson = Lesson()
+                lesson.charge_id = int(form.charges[i].data.split(' | ')[-1])
+                lesson.audit_id = base.query(Audit).filter(Audit.number == form.audits[i].data).first().id
+                lesson.weekday = i // PAIRS_IN_A_DAY
+                lesson.pair_number = i % PAIRS_IN_A_DAY
+                base.add(lesson)
+        base.commit()
+        return redirect('/timetable_list')
+
     return render_template('table_redactor.html', title='Создание расписания', form=form,
-                           pad=PAIRS_IN_A_DAY, week=WEEK, group='< вставить название группы >')
+                           pad=PAIRS_IN_A_DAY, week=WEEK, group=base.query(Group).get(group_id).name)
 
 
 @app.route('/delete/<subject>/<int:id>', methods=['GET', 'POST'])
