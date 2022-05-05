@@ -91,8 +91,27 @@ def logout():
 
 
 @app.route('/')
-def index():
-    return render_template('hello.html')
+def index(group_id=1):
+    base = db_session.create_session()
+    charge = []
+    audit = []
+    involved = [el.id for el in base.query(Charge).filter(Charge.group_id == group_id).all()]
+    for i in range(PAIRS_IN_A_DAY * 6):
+        lesson = base.query(Lesson).filter(Lesson.charge_id.in_(involved),
+                                           Lesson.weekday == i // PAIRS_IN_A_DAY,
+                                           Lesson.pair_number == i % PAIRS_IN_A_DAY).first()
+        if lesson:
+            ch = base.query(Charge).get(lesson.charge_id)
+            su = base.query(Subject).get(ch.subject_id)
+            au = base.query(Audit).get(lesson.audit_id)
+            charge.append(su.title)
+            audit.append(f'Кабинет №{au.number}')
+        else:
+            charge.append('-')
+            audit.append('-')
+
+    return render_template('show_table.html', title='Добро пожаловать', charge=charge, audit=audit,
+                           pad=PAIRS_IN_A_DAY, week=WEEK, group=base.query(Group).get(group_id).name)
 
 
 @app.route('/timetable_list')

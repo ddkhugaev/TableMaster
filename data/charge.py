@@ -1,4 +1,5 @@
 import sqlalchemy
+from sqlalchemy import orm
 from .db_session import SqlAlchemyBase
 
 
@@ -12,3 +13,4 @@ class Charge(SqlAlchemyBase):
     type = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     pairs = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     semester = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    lesson = orm.relation('Lesson')

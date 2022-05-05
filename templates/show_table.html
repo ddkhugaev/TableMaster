@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<p id="hello">Table Master</p>
+<h1>Расписание для {{ group }}</h1>
+    <table id="Redactor"  class="table table-bordered">
+        {% for i in range(3) %}
+            <tr>
+                <th colspan="3">{{ week[i] }}</th>
+                <th colspan="3">{{ week[i + 3] }}</th>
+            </tr>
+            {% for j in range(pad) %}
+            <tr>
+                <th>{{ j + 1 }}</th>
+                <td>
+                    {{ charge[pad * i + j] }}
+                </td>
+                <td>
+                    {{ audit[pad * i + j]  }}
+                </td>
+                <th>{{ j + 1 }}</th>
+                <td>
+                    {{ charge[pad * (i + 3) + j] }}
+                </td>
+                <td>
+                    {{ audit[pad * (i + 3) + j] }}
+                </td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+</form>
+{% endblock %}

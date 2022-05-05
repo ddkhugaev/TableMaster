@@ -1,4 +1,5 @@
 import sqlalchemy
+from sqlalchemy import orm
 from .db_session import SqlAlchemyBase
 
 
@@ -10,3 +11,4 @@ class Lesson(SqlAlchemyBase):
     audit_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('audit.id'))
     pair_number = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     weekday = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    charges = orm.relation('Charge', back_populates='lesson')
