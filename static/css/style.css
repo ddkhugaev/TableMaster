@@ -43,8 +43,9 @@
   overflow: hidden;
   margin: auto;
   cursor: default;
+  margin: 100px;
 
-  background: linear-gradient(to right, red, green 50%, royalblue 50%);
+  background: linear-gradient(to right, dodgerblue, deepskyblue 50%, royalblue 50%);
 
   background-clip: text;
   -webkit-background-clip: text;
