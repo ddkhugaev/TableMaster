@@ -43,6 +43,7 @@
   overflow: hidden;
   margin: auto;
   cursor: default;
+  margin: 100px;
 
   background: linear-gradient(to right, dodgerblue, deepskyblue 50%, royalblue 50%);
 
