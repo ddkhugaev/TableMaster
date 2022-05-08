@@ -2,6 +2,14 @@
 
 {% block content %}
 <p id="hello">Table Master</p>
+<form method="post" class="">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.choice.label }}
+        {{ form.choice(class="form-control", style="display: inline-block; width: auto") }}
+        {{ form.submit(type="submit", class="btn btn-primary") }}
+    </p>
+</form>
 <h1>Расписание для {{ group }}</h1>
     <table id="Redactor"  class="table table-bordered">
         {% for i in range(3) %}

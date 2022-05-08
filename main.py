@@ -90,9 +90,21 @@ def logout():
     return redirect("/")
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index(group_id=1):
+    form = IndexFilter()
     base = db_session.create_session()
+
+    update_group = False
+    form.choice.choices = [el.name for el in base.query(Group).all()]
+    if form.validate_on_submit():
+        group_id = base.query(Group).filter(Group.name == form.choice.data).first().id
+        update_group = True
+    else:
+        group_id = int(flask.request.cookies.get("group", 1))
+    group_name = base.query(Group).get(group_id).name
+    form.choice.data = group_name
+
     charge = []
     audit = []
     involved = [el.id for el in base.query(Charge).filter(Charge.group_id == group_id).all()]
@@ -110,8 +122,12 @@ def index(group_id=1):
             charge.append('-')
             audit.append('-')
 
-    return render_template('show_table.html', title='Добро пожаловать', charge=charge, audit=audit,
-                           pad=PAIRS_IN_A_DAY, week=WEEK, group=base.query(Group).get(group_id).name)
+    res = flask.make_response(render_template('show_table.html', title='Добро пожаловать', charge=charge, audit=audit,
+                                              form=form, pad=PAIRS_IN_A_DAY, week=WEEK,
+                                              group=group_name))
+    if update_group:
+        res.set_cookie("group", str(group_id), max_age=60 * 60 * 24 * 365 * 1)
+    return res
 
 
 @app.route('/timetable_list')

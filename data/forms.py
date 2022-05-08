@@ -62,6 +62,17 @@ class Redactor(FlaskForm):
     audits = FieldList(SelectField(), min_entries=PAIRS_IN_A_DAY * 6)
     submit = SubmitField('Сохранить и проверить')
 
+
 class OKForm(FlaskForm):
     confirm = BooleanField('Я нахожусь в добром здравии и хочу продолжить', default=True, validators=[DataRequired()])
     submit = SubmitField('Подтвердить')
+
+
+class IndexFilter(FlaskForm):
+    choice = SelectField('Выберите группу: ', validators=[DataRequired()])
+    submit = SubmitField('Применить')
+
+
+class Search(FlaskForm):
+    search = StringField()
+    submit = SubmitField('Поиск')
