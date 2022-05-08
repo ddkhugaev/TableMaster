@@ -18,6 +18,8 @@
 
 #Redactor {
     width: 100%;
+    word-wrap: break-word;
+
 }
 
 #Footer {
@@ -37,13 +39,14 @@
 #hello {
   position: relative;
   display: inline-block;
-  font-size: 10em;
+  font-size: 10vw;
   font-weight: 800;
   color: royalblue;
   overflow: hidden;
   margin: auto;
   cursor: default;
-  margin: 100px;
+  margin-left: 10%;
+  margin-right: 10%;
 
   background: linear-gradient(to right, dodgerblue, deepskyblue 50%, royalblue 50%);
 
