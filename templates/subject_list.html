@@ -2,9 +2,15 @@
 
 {% block content %}
     <h1>{{ title }}</h1>
-    <p>
+    <form method="post" class="form-inline">
         <a href="/subject" class="btn btn-primary">Добавить</a>
-    </p>
+        {{ form.hidden_tag() }}
+        {{
+            form.search(type="search", placeholder="Поиск", class="form-control",
+            style="width: auto; display: inline;")
+        }}
+        {{ form.submit(type="submit", class="btn btn-success") }}
+    </form>
     {% for el in group %}
     <div class="minicard">
         <span>{{ loop.index }}</span>

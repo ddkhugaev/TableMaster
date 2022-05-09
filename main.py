@@ -91,15 +91,13 @@ def logout():
 
 
 @app.route('/', methods=['GET', 'POST'])
-def index(group_id=1):
+def index():
     form = IndexFilter()
     base = db_session.create_session()
 
-    update_group = False
     form.choice.choices = [el.name for el in base.query(Group).all()]
     if form.validate_on_submit():
         group_id = base.query(Group).filter(Group.name == form.choice.data).first().id
-        update_group = True
     else:
         group_id = int(flask.request.cookies.get("group", 1))
     group_name = base.query(Group).get(group_id).name
@@ -125,13 +123,13 @@ def index(group_id=1):
     res = flask.make_response(render_template('show_table.html', title='Добро пожаловать', charge=charge, audit=audit,
                                               form=form, pad=PAIRS_IN_A_DAY, week=WEEK,
                                               group=group_name))
-    if update_group:
-        res.set_cookie("group", str(group_id), max_age=60 * 60 * 24 * 365 * 1)
+    res.set_cookie("group", str(group_id), max_age=60 * 60 * 24 * 365 * 1)
     return res
 
 
-@app.route('/timetable_list')
+@app.route('/timetable_list', methods=['GET', 'POST'])
 def timetable_list():
+    form = Search()
     base = db_session.create_session()
     groupids = set()
     for lesson in base.query(Lesson).all():
@@ -140,35 +138,56 @@ def timetable_list():
     group = []
     for g in groupids:
         group.append((g, base.query(Group).get(g).name + ' (расписание)'))
-    return render_template('timetable_list.html', title='Расписания', group=group)
+    if form.validate_on_submit():
+        for i in range(len(group) - 1, -1, -1):
+            if form.search.data.lower() not in group[i][1].lower():
+                del group[i]
+    group.sort(key=lambda x: x[1])
+    return render_template('timetable_list.html', title='Расписания', group=group, form=form)
 
 
-@app.route('/group_choose')
+@app.route('/group_choose', methods=['GET', 'POST'])
 def group_choose():
+    form = Search()
     base = db_session.create_session()
     group = [(el.id, f'(Курс {el.level}) {el.name}') for el in base.query(Group).all()]
+    if form.validate_on_submit():
+        for i in range(len(group) - 1, -1, -1):
+            if form.search.data.lower() not in group[i][1].lower():
+                del group[i]
     group.sort(key=lambda x: x[1])
-    return render_template('group_choose.html', title='Выбор группы', group=group)
+    return render_template('group_choose.html', title='Выбор группы', group=group, form=form)
 
 
-@app.route('/teacher_list')
+@app.route('/teacher_list', methods=['GET', 'POST'])
 def teacher_list():
+    form = Search()
     base = db_session.create_session()
     group = [(el.id, el.surname + ' ' + el.name + ' ' + el.patronymic) for el in base.query(Teacher).all()]
+    if form.validate_on_submit():
+        for i in range(len(group) - 1, -1, -1):
+            if form.search.data.lower() not in group[i][1].lower():
+                del group[i]
     group.sort(key=lambda x: x[1])
-    return render_template('teacher_list.html', title='Учителя', group=group)
+    return render_template('teacher_list.html', title='Учителя', group=group, form=form)
 
 
-@app.route('/group_list')
+@app.route('/group_list', methods=['GET', 'POST'])
 def group_list():
+    form = Search()
     base = db_session.create_session()
     group = [(el.id, f'(Курс {el.level}) {el.name}') for el in base.query(Group).all()]
+    if form.validate_on_submit():
+        for i in range(len(group) - 1, -1, -1):
+            if form.search.data.lower() not in group[i][1].lower():
+                del group[i]
     group.sort(key=lambda x: x[1])
-    return render_template('group_list.html', title='Группы', group=group)
+    return render_template('group_list.html', title='Группы', group=group, form=form)
 
 
-@app.route('/charge_list')
+@app.route('/charge_list', methods=['GET', 'POST'])
 def charge_list():
+    form = Search()
     base = db_session.create_session()
     group = []
     for el in base.query(Charge).all():
@@ -178,24 +197,38 @@ def charge_list():
         group.append((el.id, f'{te.surname} {te.name} {te.patronymic}'
                              f'/{gr.name}/{su.title}({el.type}) '
                              f'({el.semester} семестр, {el.pairs} пар)'))
+    if form.validate_on_submit():
+        for i in range(len(group) - 1, -1, -1):
+            if form.search.data.lower() not in group[i][1].lower():
+                del group[i]
     group.sort(key=lambda x: x[1])
-    return render_template('charge_list.html', title='Нагрузки', group=group)
+    return render_template('charge_list.html', title='Нагрузки', group=group, form=form)
 
 
-@app.route('/subject_list')
+@app.route('/subject_list', methods=['GET', 'POST'])
 def subject_list():
+    form = Search()
     base = db_session.create_session()
     group = [(el.id, el.title) for el in base.query(Subject).all()]
+    if form.validate_on_submit():
+        for i in range(len(group) - 1, -1, -1):
+            if form.search.data.lower() not in group[i][1].lower():
+                del group[i]
     group.sort(key=lambda x: x[1])
-    return render_template('subject_list.html', title='Предметы', group=group)
+    return render_template('subject_list.html', title='Предметы', group=group, form=form)
 
 
-@app.route('/audit_list')
+@app.route('/audit_list', methods=['GET', 'POST'])
 def audit_list():
+    form = Search()
     base = db_session.create_session()
     group = [(el.id, f'Кабинет №{el.number} ({el.volume} чел.)') for el in base.query(Audit).all()]
+    if form.validate_on_submit():
+        for i in range(len(group) - 1, -1, -1):
+            if form.search.data.lower() not in group[i][1].lower():
+                del group[i]
     group.sort(key=lambda x: x[1])
-    return render_template('audit_list.html', title='Аудитории', group=group)
+    return render_template('audit_list.html', title='Аудитории', group=group, form=form)
 
 
 @app.route('/teacher', methods=['GET', 'POST'])
