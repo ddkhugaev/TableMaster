@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Регистрация</h1>
+{% if msg %}
+<div class="alert alert-danger" role="alert">{{ msg }}</div>
+{% endif %}
+<form method="post" class="">
+    {{ form.hidden_tag() }}
+    {% for field in form %}
+        {% if loop.index not in [5, 6] %}
+            <p>
+                {{ field.label }}<br>
+                {{ field(class="form-control") }}<br>
+                {% for error in field.errors %}
+                    <p class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </p>
+        {% endif %}
+    {% endfor %}
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+</form>
+{% endblock %}

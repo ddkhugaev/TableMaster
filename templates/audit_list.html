@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <form method="post" class="form-inline">
+        <a href="/audit" class="btn btn-primary">Добавить</a>
+        {{ form.hidden_tag() }}
+        {{
+            form.search(type="search", placeholder="Поиск", class="form-control",
+            style="width: auto; display: inline;")
+        }}
+        {{ form.submit(type="submit", class="btn btn-success") }}
+    </form>
+    {% for el in group %}
+        <div class="minicard">
+            <span>{{ loop.index }}</span>
+            <div>
+                <a class="btn btn-outline-danger btn-sm" style="margin: 0 .5rem;" href="delete/audit/{{ el[0] }}">Удалить</a>
+            </div>
+            <a href="/audit/{{ el[0] }}" style="text-decoration: none">{{ el[1] }}</a>
+        </div>
+    {% endfor %}
+    <h3>Всего: {{ group|length }}</h3>
+{% endblock %}

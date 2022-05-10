@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <p>Выберите группу, для которой требуется расписание:</p>
+    <form method="post" class="form-inline">
+        {{ form.hidden_tag() }}
+        {{
+            form.search(type="search", placeholder="Поиск", class="form-control",
+            style="width: auto; display: inline;")
+        }}
+        {{ form.submit(type="submit", class="btn btn-success") }}
+    </form>
+    {% for el in group %}
+    <div class="minicard">
+        <span>{{ loop.index }}</span>
+        <a href="/redactor/{{ el[0] }}" style="text-decoration: none">{{ el[1] }}</a>
+    </div>
+    {% endfor %}
+    <h3>Всего: {{ group|length }}</h3>
+{% endblock %}
