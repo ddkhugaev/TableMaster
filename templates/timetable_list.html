@@ -3,7 +3,7 @@
 {% block content %}
     <h1>{{ title }}</h1>
     <form method="post" class="form-inline">
-        <a href="/teacher" class="btn btn-primary">Добавить</a>
+        <a href="/group_choose" class="btn btn-primary">Добавить</a>
         {{ form.hidden_tag() }}
         {{
             form.search(type="search", placeholder="Поиск", class="form-control",
@@ -15,7 +15,7 @@
     <div class="minicard">
         <span>{{ loop.index }}</span>
         <div>
-            <a class="btn btn-outline-danger btn-sm" style="margin: 0 .5rem;" href="timetable_discard/{{ el[0] }}">Удалить</a>
+            <a class="btn btn-outline-danger btn-sm" style="margin: 0 .5rem;" href="/timetable_discard/{{ el[0] }}">Удалить</a>
         </div>
         <a href="/redactor/{{ el[0] }}" style="text-decoration: none">{{ el[1] }}</a>
     </div>

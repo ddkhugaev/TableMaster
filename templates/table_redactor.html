@@ -33,21 +33,6 @@
             {% endfor %}
         {% endfor %}
     </table>
-    <!--
-    {% for field in form %}
-        {% if loop.index not in [5, 6] %}
-            <p>
-                {{ field.label }}<br>
-                {{ field(class="form-control") }}<br>
-                {% for error in field.errors %}
-                    <p class="alert alert-danger" role="alert">
-                        {{ error }}
-                    </p>
-                {% endfor %}
-            </p>
-        {% endif %}
-    {% endfor %}
-    -->
     <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
 </form>
 {% endblock %}

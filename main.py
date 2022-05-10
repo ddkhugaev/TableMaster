@@ -1,10 +1,9 @@
 import os
-
-import flask
 from flask import Flask, render_template, redirect
 from flask_login import LoginManager, login_user, logout_user, login_required
-from data import db_session
+from flask_restful import Api
 from data.forms import *
+from data.api_resources import *
 from data.user import User
 from data.charge import Charge
 from data.group import Group
@@ -21,6 +20,13 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 lm = LoginManager()
 lm.init_app(app)
+
+
+API = Api(app)
+API.add_resource(TimetableResource, '/api/timetable/<int:group_id>')
+API.add_resource(GroupResource, '/api/group/<int:id>')
+API.add_resource(GroupListResource, '/api/group')
+API.add_resource(GroupGetter, '/api/get_group/<name>')
 
 
 @lm.user_loader
@@ -95,7 +101,7 @@ def index():
     form = IndexFilter()
     base = db_session.create_session()
 
-    form.choice.choices = [el.name for el in base.query(Group).all()]
+    form.choice.choices = list(sorted([el.name for el in base.query(Group).all()]))
     if form.validate_on_submit():
         group_id = base.query(Group).filter(Group.name == form.choice.data).first().id
     else:
@@ -114,15 +120,15 @@ def index():
             ch = base.query(Charge).get(lesson.charge_id)
             su = base.query(Subject).get(ch.subject_id)
             au = base.query(Audit).get(lesson.audit_id)
-            charge.append(su.title)
+            te = base.query(Teacher).get(ch.teacher_id)
+            charge.append(f'{su.title} ({te.surname} {te.name} {te.patronymic})')
             audit.append(f'Кабинет №{au.number}')
         else:
             charge.append('-')
             audit.append('-')
 
     res = flask.make_response(render_template('show_table.html', title='Добро пожаловать', charge=charge, audit=audit,
-                                              form=form, pad=PAIRS_IN_A_DAY, week=WEEK,
-                                              group=group_name))
+                                              form=form, pad=PAIRS_IN_A_DAY, week=WEEK, group=group_name))
     res.set_cookie("group", str(group_id), max_age=60 * 60 * 24 * 365 * 1)
     return res
 
@@ -456,18 +462,35 @@ def redactor(group_id):
     chraw = base.query(Charge).filter(Charge.group_id == group_id)
     involved = [el.id for el in chraw]
 
-    aud = ['<выбрать аудиторию>'] + list(map(lambda x: x[0], base.query(Audit.number).all()))
-    ch = ['<выбрать нагрузку>']
+    aud = list(map(lambda x: x[0], base.query(Audit.number).all()))
+    ch = []
     for c in chraw:
         sj = base.query(Subject.title).filter(Subject.id == c.subject_id).first()[0]
         t = base.query(Teacher).filter(Teacher.id == c.teacher_id).first()
-        ch.append(f'{sj} ({c.type})'
-                      f' ({t.surname + " " + t.name + " " + t.patronymic})'
-                      f' | {c.id}')
-    for field in form.charges:
-        field.choices = ch
-    for field in form.audits:
-        field.choices = aud
+        ch.append(f'({c.pairs} пар) {sj} ({c.type})'
+                  f' ({t.surname + " " + t.name + " " + t.patronymic})'
+                  f' | {c.id}')
+
+    for i in range(PAIRS_IN_A_DAY * 6):
+        ch_f = ch[::]
+        aud_f = aud[::]
+        for lesson in base.query(Lesson).filter(Lesson.charge_id.notin_(involved),
+                                                Lesson.weekday == i // PAIRS_IN_A_DAY,
+                                                Lesson.pair_number == i % PAIRS_IN_A_DAY):
+            teacher = base.query(Teacher).filter(
+                Teacher.id == base.query(Charge).filter(Charge.id == lesson.charge_id).first().teacher_id
+            ).first()
+            t_name = f'{teacher.surname} {teacher.name} {teacher.patronymic}'
+            for j in range(len(ch_f)):
+                if t_name in ch_f[j]:
+                    del ch_f[j]
+                    break
+            try:
+                del aud_f[aud_f.index(base.query(Audit).filter(Audit.id == lesson.audit_id).first().number)]
+            except Exception:
+                pass
+        form.charges[i].choices = ['<выбрать нагрузку>'] + ch_f
+        form.audits[i].choices = ['<выбрать аудиторию>'] + aud_f
 
     if flask.request.method == 'GET':
         for lesson in base.query(Lesson).filter(Lesson.charge_id.in_(involved)).all():
@@ -477,6 +500,7 @@ def redactor(group_id):
                 str(base.query(Audit).filter(Audit.id == lesson.audit_id).first().number)
 
     if form.validate_on_submit():
+        usage_counter = {}
         for i in range(PAIRS_IN_A_DAY * 6):
             clear = form.charges[i].data == '<выбрать нагрузку>' or form.audits[i].data == '<выбрать аудиторию>'
             lesson = base.query(Lesson).filter(Lesson.charge_id.in_(involved),
@@ -497,6 +521,27 @@ def redactor(group_id):
                 lesson.weekday = i // PAIRS_IN_A_DAY
                 lesson.pair_number = i % PAIRS_IN_A_DAY
                 base.add(lesson)
+            if lesson.charge_id not in usage_counter:
+                usage_counter[lesson.charge_id] = 0
+            usage_counter[lesson.charge_id] += 1
+
+        errors = []
+        for k in usage_counter:
+            el = base.query(Charge).get(k)
+            te = base.query(Teacher).get(el.teacher_id)
+            gr = base.query(Group).get(el.group_id)
+            su = base.query(Subject).get(el.subject_id)
+            if el.pairs > usage_counter[k]:
+                errors.append(f'Нагрузка {te.surname} {te.name} {te.patronymic}/{gr.name}/{su.title}({el.type}) '
+                              f'({el.semester} семестр) используется реже, чем {el.pairs} раз(-а)')
+            elif el.pairs < usage_counter[k]:
+                errors.append(f'Нагрузка {te.surname} {te.name} {te.patronymic}/{gr.name}/{su.title}({el.type}) '
+                              f'({el.semester} семестр) используется чаще, чем {el.pairs} раз(-а)')
+        if errors:
+            base.rollback()
+            return render_template('table_redactor.html', title='Создание расписания', form=form,
+                                   pad=PAIRS_IN_A_DAY, week=WEEK, group=base.query(Group).get(group_id).name,
+                                   msg=errors)
         base.commit()
         return redirect('/timetable_list')
 
@@ -518,7 +563,7 @@ def delete(subject, id):
         name = '(Группа) ' + f'(Курс {obj.level}) {obj.name}'
         conflicts = [base.query(Charge).filter(Charge.group_id == id).all()]
     elif subject == 'charge':
-        obj = base.query(Group).get(id)
+        obj = base.query(Charge).get(id)
         te = base.query(Teacher).get(obj.teacher_id)
         gr = base.query(Group).get(obj.group_id)
         su = base.query(Subject).get(obj.subject_id)
@@ -544,6 +589,24 @@ def delete(subject, id):
         return render_template('9403.html', name=name, bacc=f'/{subject}_list', title='Удаление')
         
     return render_template('are_you_sure.html', title='Потверждение удаления', name=name, form=form)
+
+
+@app.route('/timetable_discard/<int:group_id>', methods=['GET', 'POST'])
+def delete_timetable(group_id):
+    form = OKForm()
+    if flask.request.method == 'GET':
+        form.confirm.data = False
+    base = db_session.create_session()
+    name = base.query(Group).get(group_id).name
+
+    if form.validate_on_submit():
+        involved = [el.id for el in base.query(Charge).filter(Charge.group_id == group_id).all()]
+        for lesson in base.query(Lesson).filter(Lesson.charge_id.in_(involved)):
+            base.delete(lesson)
+        base.commit()
+        return redirect('/timetable_list')
+
+    return render_template('are_you_sure.html', title='Потверждение удаления', name=f'Расписание для {name}', form=form)
 
 
 def main():

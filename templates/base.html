@@ -27,7 +27,7 @@
 			<div class="collapse navbar-collapse justify-content-between" id="phoneCollapsed">
 				<!---->
 				{% if current_user.is_authenticated %}
-					<div style="display: flex;">
+					<div style="display: flex; overflow: auto;">
 						<a class="btn btn-outline-primary" href="/timetable_list">Расписания</a>
 						<a class="nav-link" href="/teacher_list">Учителя</a>
 						<a class="nav-link" href="/group_list">Группы</a>
